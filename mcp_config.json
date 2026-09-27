@@ -1,0 +1,376 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Antigravity MCP Configuration",
+  "description": "JSON schema for Antigravity Model Context Protocol (MCP) server configurations (mcp_config.json)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "URL or relative path to the JSON schema."
+    },
+    "mcpServers": {
+      "type": "object",
+      "description": "Map of MCP server identifiers to their transport and capability configurations.",
+      "additionalProperties": {
+        "$ref": "#/definitions/mcpServer"
+      }
+    }
+  },
+  "required": [
+    "mcpServers"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "mcpServer": {
+      "type": "object",
+      "description": "Configuration for an individual MCP server. Must use either Stdio transport (local command) or SSE transport (remote HTTP endpoint).",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "The executable or command name to launch a local stdio MCP server process (e.g., 'node', 'python3', or binary path)."
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Command-line arguments to pass to the local MCP server command."
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Environment variables to inject into the local MCP server process."
+        },
+        "cwd": {
+          "type": "string",
+          "description": "Working directory in which to execute the local MCP server process."
+        },
+        "serverUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "The HTTP(S) URL of the remote MCP server SSE endpoint."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Alternative alias for serverUrl."
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "HTTP headers to send with requests to the remote MCP server (e.g. Authorization, X-goog-user-project, API keys)."
+        },
+        "authProviderType": {
+          "type": "string",
+          "description": "Authentication provider type for remote MCP server (e.g., 'google_credentials', 'GOOGLE_OAUTH', 'AUTH_PROVIDER_TYPE_UNSPECIFIED')."
+        },
+        "auth_provider_type": {
+          "type": "string",
+          "description": "Snake_case alias for authProviderType."
+        },
+        "oauth": {
+          "$ref": "#/definitions/mcpOAuthConfig"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Whether this MCP server is disabled."
+        },
+        "enabledTools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Allowlist of tool names exposed by this server. If specified, only matching tools are enabled."
+        },
+        "enabled_tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Snake_case alias for enabledTools."
+        },
+        "disabledTools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Denylist of tool names to exclude from this server."
+        },
+        "disabled_tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Snake_case alias for disabledTools."
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Execution timeout for requests sent to this MCP server (supports milliseconds or seconds)."
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Execution timeout in seconds for requests sent to this MCP server."
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Snake_case alias for timeoutSeconds."
+        },
+        "tools": {
+          "$ref": "#/definitions/toolsSetting"
+        },
+        "skipToolNamePrefix": {
+          "type": "boolean",
+          "description": "Whether to omit the server name prefix in the names of exposed tools."
+        },
+        "skip_tool_name_prefix": {
+          "type": "boolean",
+          "description": "Snake_case alias for skipToolNamePrefix."
+        },
+        "skipToolDescriptionPrefix": {
+          "type": "boolean",
+          "description": "Whether to omit the server name prefix in tool descriptions."
+        },
+        "skip_tool_description_prefix": {
+          "type": "boolean",
+          "description": "Snake_case alias for skipToolDescriptionPrefix."
+        },
+        "forceAllToolsEager": {
+          "type": "boolean",
+          "description": "Whether to force all tools from this server to be eagerly loaded into context."
+        },
+        "force_all_tools_eager": {
+          "type": "boolean",
+          "description": "Snake_case alias for forceAllToolsEager."
+        },
+        "strictArgumentValidation": {
+          "type": "boolean",
+          "description": "Whether to strictly validate tool arguments against tool parameter schemas."
+        },
+        "strict_argument_validation": {
+          "type": "boolean",
+          "description": "Snake_case alias for strictArgumentValidation."
+        },
+        "omitFromSystemPrompt": {
+          "type": "boolean",
+          "description": "Whether to omit this server's tools from the generated system prompt."
+        },
+        "omit_from_system_prompt": {
+          "type": "boolean",
+          "description": "Snake_case alias for omitFromSystemPrompt."
+        }
+      },
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "title": "Stdio Transport",
+          "description": "Local executable transport communicating over standard input and output (stdio).",
+          "required": [
+            "command"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "serverUrl"
+                ]
+              },
+              {
+                "required": [
+                  "url"
+                ]
+              },
+              {
+                "required": [
+                  "headers"
+                ]
+              },
+              {
+                "required": [
+                  "authProviderType"
+                ]
+              },
+              {
+                "required": [
+                  "auth_provider_type"
+                ]
+              },
+              {
+                "required": [
+                  "oauth"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "title": "SSE / HTTP Transport",
+          "description": "Remote MCP server communicating over HTTP using Server-Sent Events (SSE).",
+          "anyOf": [
+            {
+              "required": [
+                "serverUrl"
+              ]
+            },
+            {
+              "required": [
+                "url"
+              ]
+            }
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "command"
+                ]
+              },
+              {
+                "required": [
+                  "args"
+                ]
+              },
+              {
+                "required": [
+                  "env"
+                ]
+              },
+              {
+                "required": [
+                  "cwd"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "toolsSetting": {
+      "description": "Tool configuration options for this MCP server. Can be a granular map of tool names to per-tool options, a server-level setting object, or a list of tool names.",
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "Granular map of tool names to per-tool configuration.",
+          "additionalProperties": {
+            "$ref": "#/definitions/mcpToolConfig"
+          }
+        },
+        {
+          "type": "object",
+          "description": "Server-level tool configuration options.",
+          "properties": {
+            "eager": {
+              "type": "boolean",
+              "description": "Whether all tools from this server should be eagerly loaded into agent context rather than lazy-loaded."
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "array",
+          "description": "List of tool names to expose from this server.",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "mcpToolConfig": {
+      "type": "object",
+      "description": "Configuration options for an individual tool exposed by this MCP server.",
+      "properties": {
+        "eager": {
+          "type": "boolean",
+          "description": "Whether this tool should be eagerly loaded into agent context rather than lazy-loaded."
+        },
+        "background": {
+          "type": [
+            "string",
+            "boolean"
+          ],
+          "enum": [
+            "unspecified",
+            "off",
+            "always",
+            true,
+            false,
+            "MCP_TOOL_BACKGROUND_MODE_UNSPECIFIED",
+            "MCP_TOOL_BACKGROUND_MODE_OFF",
+            "MCP_TOOL_BACKGROUND_MODE_ALWAYS"
+          ],
+          "description": "Backgrounding execution mode for this tool."
+        },
+        "taskOptions": {
+          "$ref": "#/definitions/mcpTaskOptions"
+        },
+        "task_options": {
+          "$ref": "#/definitions/mcpTaskOptions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "mcpTaskOptions": {
+      "type": "object",
+      "description": "Task management options for long-running tool executions.",
+      "properties": {
+        "suppressCompletionNotification": {
+          "type": "boolean",
+          "description": "Whether to suppress notifications when this task finishes execution."
+        },
+        "suppress_completion_notification": {
+          "type": "boolean",
+          "description": "Snake_case alias for suppressCompletionNotification."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Human-readable display name for background tasks created by this tool."
+        },
+        "display_name": {
+          "type": "string",
+          "description": "Snake_case alias for displayName."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of background task progress and purpose."
+        }
+      },
+      "additionalProperties": false
+    },
+    "mcpOAuthConfig": {
+      "type": "object",
+      "description": "OAuth 2.0 configuration for remote MCP authentication.",
+      "properties": {
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "OAuth permission scopes required by the remote MCP server."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "OAuth client identifier."
+        },
+        "client_id": {
+          "type": "string",
+          "description": "Snake_case alias for clientId."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "OAuth client secret."
+        },
+        "client_secret": {
+          "type": "string",
+          "description": "Snake_case alias for clientSecret."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

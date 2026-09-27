@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Antigravity Plugin Manifest",
+  "description": "Schema for Antigravity plugin manifest files (plugin.json)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "URL or relative path to the JSON schema."
+    },
+    "name": {
+      "type": "string",
+      "description": "The unique, machine-readable name of the plugin. Must contain only alphanumeric characters, hyphens, and underscores.",
+      "pattern": "^[a-zA-Z0-9-_]+$"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Human-readable display name for the plugin shown in customizations UI."
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the plugin (e.g. '1.0.0')."
+    },
+    "description": {
+      "type": "string",
+      "description": "A brief human-readable description of the plugin's purpose and capabilities."
+    },
+    "disabled": {
+      "type": "boolean",
+      "description": "Whether the plugin ships disabled by default upon discovery."
+    },
+    "logo": {
+      "type": "string",
+      "description": "Relative path to an image file inside the plugin (e.g., 'assets/logo.svg'). Supported formats: .svg, .png, .jpg, .jpeg, .webp."
+    },
+    "author": {
+      "description": "Author or maintainer of the plugin.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "repository": {
+      "description": "Source code repository for the plugin.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX license identifier for the plugin (e.g., 'Apache-2.0', 'MIT')."
+    },
+    "keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of keywords or tags describing the plugin capabilities."
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to the plugin homepage or documentation."
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "additionalProperties": false
+}

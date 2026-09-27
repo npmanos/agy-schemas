@@ -1,0 +1,275 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Antigravity Lifecycle Hooks",
+  "description": "JSON schema for Antigravity lifecycle hooks configuration (hooks.json). Supports both Antigravity native named hooks and wrapped/Claude-compatible hook configurations.",
+  "anyOf": [
+    {
+      "title": "Antigravity Native Hooks Format",
+      "description": "Map of user-defined hook names to hook specifications.",
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string"
+        }
+      },
+      "patternProperties": {
+        "^(?!description$)[a-zA-Z0-9-_]+$": {
+          "$ref": "#/definitions/namedHookSpec"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "Wrapped / Claude-Compatible Hooks Format",
+      "description": "Top-level hooks container with optional description.",
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the hook suite."
+        },
+        "hooks": {
+          "$ref": "#/definitions/eventMap"
+        }
+      },
+      "required": [
+        "hooks"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "eventMap": {
+      "type": "object",
+      "description": "Map of lifecycle event names to hook handlers or hook groups.",
+      "properties": {
+        "SessionStart": {
+          "$ref": "#/definitions/eventHandlerList",
+          "description": "Handlers executed when a new conversation session starts."
+        },
+        "PreInvocation": {
+          "$ref": "#/definitions/eventHandlerList",
+          "description": "Handlers executed before the model is invoked for an agent turn."
+        },
+        "PostInvocation": {
+          "$ref": "#/definitions/eventHandlerList",
+          "description": "Handlers executed after tool calls finish for an agent turn."
+        },
+        "Stop": {
+          "$ref": "#/definitions/eventHandlerList",
+          "description": "Handlers executed when the agent execution loop terminates."
+        },
+        "UserPromptSubmit": {
+          "$ref": "#/definitions/eventHandlerList",
+          "description": "Handlers executed when a user submits a prompt."
+        },
+        "PreToolUse": {
+          "$ref": "#/definitions/eventHandlerList",
+          "description": "Handlers executed before a tool executes."
+        },
+        "PostToolUse": {
+          "$ref": "#/definitions/postToolHandlerList",
+          "description": "Handlers executed after a tool completes. Only command hooks are supported (prompt hooks are rejected)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "namedHookSpec": {
+      "type": "object",
+      "description": "Lifecycle hook specification for an individual named hook.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether this named hook is enabled. Defaults to true."
+        },
+        "SessionStart": {
+          "$ref": "#/definitions/eventHandlerList",
+          "description": "Handlers executed when a new conversation session starts."
+        },
+        "PreInvocation": {
+          "$ref": "#/definitions/eventHandlerList",
+          "description": "Handlers executed before the model is invoked for an agent turn."
+        },
+        "PostInvocation": {
+          "$ref": "#/definitions/eventHandlerList",
+          "description": "Handlers executed after tool calls finish for an agent turn."
+        },
+        "Stop": {
+          "$ref": "#/definitions/eventHandlerList",
+          "description": "Handlers executed when the agent execution loop terminates."
+        },
+        "UserPromptSubmit": {
+          "$ref": "#/definitions/eventHandlerList",
+          "description": "Handlers executed when a user submits a prompt."
+        },
+        "PreToolUse": {
+          "$ref": "#/definitions/eventHandlerList",
+          "description": "Handlers executed before a tool executes."
+        },
+        "PostToolUse": {
+          "$ref": "#/definitions/postToolHandlerList",
+          "description": "Handlers executed after a tool completes. Only command hooks are supported (prompt hooks are rejected)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "eventHandlerList": {
+      "type": "array",
+      "description": "List of hook handlers or tool-matcher groups.",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/toolHookGroup"
+          },
+          {
+            "$ref": "#/definitions/hookHandler"
+          }
+        ]
+      }
+    },
+    "postToolHandlerList": {
+      "type": "array",
+      "description": "List of command hook handlers or tool-matcher groups for PostToolUse.",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/postToolHookGroup"
+          },
+          {
+            "$ref": "#/definitions/commandHook"
+          }
+        ]
+      }
+    },
+    "toolHookGroup": {
+      "type": "object",
+      "description": "Associates a tool name matcher pattern with a list of hook handlers.",
+      "required": [
+        "matcher",
+        "hooks"
+      ],
+      "properties": {
+        "matcher": {
+          "type": "string",
+          "description": "Pattern or regular expression matching tool names (e.g. 'run_command', 'run_command|view_file', '*', or '')."
+        },
+        "hooks": {
+          "type": "array",
+          "minItems": 1,
+          "description": "List of hook handlers to execute when the matcher matches.",
+          "items": {
+            "$ref": "#/definitions/hookHandler"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "postToolHookGroup": {
+      "type": "object",
+      "description": "Associates a tool name matcher pattern with command hook handlers. Prompt hooks cannot be used in PostToolUse.",
+      "required": [
+        "matcher",
+        "hooks"
+      ],
+      "properties": {
+        "matcher": {
+          "type": "string",
+          "description": "Pattern or regular expression matching tool names (e.g. 'run_command', 'run_command|view_file', '*', or '')."
+        },
+        "hooks": {
+          "type": "array",
+          "minItems": 1,
+          "description": "List of command hook handlers to execute after tool completion.",
+          "items": {
+            "$ref": "#/definitions/commandHook"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "hookHandler": {
+      "description": "An individual lifecycle hook handler. Can be either a shell command hook or an AI prompt hook.",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/commandHook"
+        },
+        {
+          "$ref": "#/definitions/promptHook"
+        }
+      ]
+    },
+    "commandHook": {
+      "type": "object",
+      "description": "Executes a shell command or script during the lifecycle event.",
+      "required": [
+        "command"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "command"
+          ],
+          "description": "Hook handler action type. Defaults to 'command'."
+        },
+        "command": {
+          "type": "string",
+          "description": "The shell command to execute (run via 'sh -c' on Unix, 'cmd /c' on Windows)."
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Execution timeout in seconds. Defaults to 30."
+        },
+        "shell": {
+          "type": "string",
+          "description": "Specific shell binary to execute the command with (e.g. 'bash', 'sh')."
+        },
+        "async": {
+          "type": "boolean",
+          "description": "Whether to execute the hook command asynchronously in the background."
+        }
+      },
+      "additionalProperties": false
+    },
+    "promptHook": {
+      "type": "object",
+      "description": "Evaluates an AI prompt instruction during the lifecycle event.",
+      "required": [
+        "prompt"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "prompt"
+          ],
+          "description": "Hook handler action type. Set to 'prompt' for model prompt evaluation."
+        },
+        "prompt": {
+          "type": "string",
+          "description": "The prompt instruction text sent to the model."
+        },
+        "model": {
+          "type": "string",
+          "enum": [
+            "inherit",
+            "flash",
+            "pro",
+            "flash_lite"
+          ],
+          "description": "The model used to evaluate the prompt. Defaults to 'inherit'."
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Execution timeout in seconds."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
